@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Voice Crawler Template
+Parameters:
+  BucketName:
+    Type: String
+    Description: S3 Bucket name
+    Default: voice-crawler
+
+Resources:
+  ReportsS3Bucket:
+    Type: AWS::S3::Bucket
+    DependsOn: S3InvokeLambdaPermission
+    Properties:
+      BucketName: !Ref BucketName
