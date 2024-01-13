@@ -9,6 +9,10 @@ Parameters:
     Type: String
     Description: S3 Bucket name for transcribed audio files
     Default: transcribed-audio-voice-crawler
+  LogRetentionInDays:
+    Type: String
+    Description: Number of log retention days
+    Default: 1
 
 Resources:
   RawAudioS3Bucket:
@@ -61,6 +65,33 @@ Resources:
                 Action:
                   - s3:PutObject
                 Resource: !Sub "arn:aws:s3:::${TranscribedAudioBucketName}/*"
+              - Effect: Allow
+                Action:
+                  - "transcribe:StartTranscriptionJob"
+                Resource: "*"
+  TranscribeAudioLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${TranscribeAudioLambdaFunction}"
+      RetentionInDays: !Ref LogRetentionInDays
+  TranscribeAudioLambdaLogPermissions:
+    Type: AWS::IAM::Policy
+    Properties:
+      Roles:
+        - !Ref TranscribeAudioLambdaRole
+      PolicyName: !Sub "${AWS::Region}-TranscribeAudioLambdaLogGroup"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource:
+              - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${TranscribeAudioLambdaFunction}"
+              - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${TranscribeAudioLambdaFunction}:*"
+              - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${TranscribeAudioLambdaFunction}:*:*"
   TranscribeAudioLambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
