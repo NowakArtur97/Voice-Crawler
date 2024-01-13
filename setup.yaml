@@ -15,6 +15,25 @@ Resources:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref RawAudioBucketName
+      NotificationConfiguration:
+        LambdaConfigurations:
+          - Event: s3:ObjectCreated:*
+            Function: !GetAtt TranscribeAudioLambdaFunction.Arn
+            Filter:
+              S3Key:
+                Rules:
+                  - Name: suffix
+                    Value: .mp3
+  S3InvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt TranscribeAudioLambdaFunction.Arn
+      SourceArn: !Sub "arn:aws:s3:::${RawAudioBucketName}"
+      SourceAccount: !Ref "AWS::AccountId"
+      Principal: s3.amazonaws.com
+  TranscribeAudioLambdaFunction:
+    Type: AWS::Lambda::Function
   TranscribedAudioBucketName:
     Type: AWS::S3::Bucket
     Properties:
