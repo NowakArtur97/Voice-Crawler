@@ -1,14 +1,21 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Voice Crawler Template
 Parameters:
-  BucketName:
+  RawAudioBucketName:
     Type: String
-    Description: S3 Bucket name
-    Default: voice-crawler
+    Description: S3 Bucket name for raw audio files
+    Default: raw-audio-voice-crawler
+  TranscribedAudioBucketName:
+    Type: String
+    Description: S3 Bucket name for transcribed audio files
+    Default: transcribed-audio-voice-crawler
 
 Resources:
-  ReportsS3Bucket:
+  RawAudioS3Bucket:
     Type: AWS::S3::Bucket
-    DependsOn: S3InvokeLambdaPermission
     Properties:
-      BucketName: !Ref BucketName
+      BucketName: !Ref RawAudioBucketName
+  TranscribedAudioBucketName:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref TranscribedAudioBucketName
