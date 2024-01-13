@@ -24,7 +24,7 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: .mp3
-  S3InvokeLambdaPermission:
+  S3InvokeTranscribeAudioLambdaPermission:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
@@ -32,9 +32,52 @@ Resources:
       SourceArn: !Sub "arn:aws:s3:::${RawAudioBucketName}"
       SourceAccount: !Ref "AWS::AccountId"
       Principal: s3.amazonaws.com
+  TranscribeAudioLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: TranscribeAudioLambda-S3BucketsPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${RawAudioBucketName}"
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "arn:aws:s3:::${RawAudioBucketName}/*"
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource: !Sub "arn:aws:s3:::${TranscribedAudioBucketName}/*"
   TranscribeAudioLambdaFunction:
     Type: AWS::Lambda::Function
-  TranscribedAudioBucketName:
+    Properties:
+      Runtime: python3.9
+      Timeout: 60
+      Handler: index.lambda_handler
+      Role: !GetAtt TranscribeAudioLambdaRole.Arn
+      Environment:
+        Variables:
+          RAW_AUDIO_BUCKET_NAME: !Ref RawAudioBucketName
+          TRANSCRIBED_AUDIO_BUCKET_NAME: !Ref TranscribedAudioBucketName
+      Code:
+        ZipFile: |
+          import os.path
+          import urllib.parse
+          import boto3
+  TranscribedAudioS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref TranscribedAudioBucketName
