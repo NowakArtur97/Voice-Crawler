@@ -53,7 +53,7 @@ Resources:
               - sts:AssumeRole
       Path: "/"
       Policies:
-        - PolicyName: TranscribeAudioLambda-S3BucketsPolicy
+        - PolicyName: TranscribeAudioLambdaFunctionPolicies
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -142,8 +142,40 @@ Resources:
               except Exception as e:
                   print('Exception when transcribing audio')
                   print(e)
-
   TranscribedAudioS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Ref TranscribedAudioBucketName
+  S3BucketCleanerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: S3BucketCleanerLambdaFunctionPolicies
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${RawAudioBucketName}"
+              - Effect: Allow
+                Action:
+                  - s3:DeleteObject
+                Resource: !Sub "arn:aws:s3:::${RawAudioBucketName}/*"
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !Sub "arn:aws:s3:::${TranscribedAudioBucketName}"
+              - Effect: Allow
+                Action:
+                  - s3:DeleteObject
+                Resource: !Sub "arn:aws:s3:::${TranscribedAudioBucketName}/*"
